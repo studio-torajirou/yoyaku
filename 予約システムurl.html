@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Studio Torajiro 予約</title>
+  <style>
+    /* 画面全体を使って埋め込みを表示するための設定 */
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      width: 100%;
+      overflow: hidden; /* 二重スクロール防止 */
+      background-color: #ffffff;
+    }
+    .frame-wrap {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+    iframe {
+      flex: 1;
+      width: 100%;
+      border: none;
+      display: block;
+    }
+    
+    /* ★逃げ道リンク（iPhone救済用）のデザイン */
+    .safari-fallback {
+      background: #fdfdfd;
+      color: #666;
+      padding: 8px;
+      text-align: center;
+      font-size: 11px;
+      border-bottom: 1px solid #eee;
+      z-index: 9999;
+      flex-shrink: 0; /* 常に上部に固定 */
+    }
+    .safari-fallback a {
+      color: #c5a065; /* スタジオのテーマカラー */
+      font-weight: bold;
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="frame-wrap">
+    <div class="safari-fallback">
+      予約画面が正しく表示されない場合は
+      <a href="https://script.google.com/macros/s/AKfycbx0i0OsAnCtTVHyz9B4bxdRzrH6NdYhbB8Xw6RsMRJt5QVHbgn-QvMnEyDjTUf2IBbB/exec" target="_top">
+        こちら（直接予約ページ）
+      </a>
+      へ
+    </div>
+
+    <iframe
+      src="https://script.google.com/macros/s/AKfycbx0i0OsAnCtTVHyz9B4bxdRzrH6NdYhbB8Xw6RsMRJt5QVHbgn-QvMnEyDjTUf2IBbB/exec"
+      title="Studio Torajiro 予約">
+    </iframe>
+  </div>
+</body>
+</html>
