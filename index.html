@@ -1,65 +1,278 @@
 <!DOCTYPE html>
 <html lang="ja">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Studio Torajiro 予約</title>
-  <style>
-    /* 画面全体を使って埋め込みを表示するための設定 */
-    html, body {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      width: 100%;
-      overflow: hidden; /* 二重スクロール防止 */
-      background-color: #ffffff;
-    }
-    .frame-wrap {
-      width: 100%;
-      height: 100%;
-      position: relative;
-      display: flex;
-      flex-direction: column;
-    }
-    iframe {
-      flex: 1;
-      width: 100%;
-      border: none;
-      display: block;
-    }
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>Studio Torajiro</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=Noto+Serif+JP:wght@300;500&family=Shippori+Mincho:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
     
-    /* ★逃げ道リンク（iPhone救済用）のデザイン */
-    .safari-fallback {
-      background: #fdfdfd;
-      color: #666;
-      padding: 8px;
-      text-align: center;
-      font-size: 11px;
-      border-bottom: 1px solid #eee;
-      z-index: 9999;
-      flex-shrink: 0; /* 常に上部に固定 */
-    }
-    .safari-fallback a {
-      color: #c5a065; /* スタジオのテーマカラー */
-      font-weight: bold;
-      text-decoration: underline;
-    }
-  </style>
-</head>
-<body>
-  <div class="frame-wrap">
-    <div class="safari-fallback">
-      予約画面が正しく表示されない場合は
-      <a href="https://script.google.com/macros/s/AKfycbxXaTzlAVH3a8-eRMtGP3NYSWMETWWiYKpuAZ2K9w72kId0NFeiCFbNROxbmyTj48J-Eg/exec" target="_top">
-        こちら（直接予約ページ）
-      </a>
-      へ
+    <input type="hidden" id="url-cancel-id" value="">
+
+    <div id="debug-log" style="background:#333; color:#fff; font-size:10px; padding:5px; text-align:center; position:fixed; top:0; left:0; width:100%; z-index:9999; display:none;">System Connecting...</div>
+
+    <div class="hero-container">
+      <img src="https://raw.githubusercontent.com/studio-torajirou/yoyaku/main/yoyaku_hiro.png" alt="Studio Torajiro" class="hero-img" referrerpolicy="no-referrer">
     </div>
 
-    <iframe
-      src="https://script.google.com/macros/s/AKfycbxXaTzlAVH3a8-eRMtGP3NYSWMETWWiYKpuAZ2K9w72kId0NFeiCFbNROxbmyTj48J-Eg/exec"
-      title="Studio Torajiro 予約">
-    </iframe>
-  </div>
-</body>
+    <div class="hero-text-area">
+      <h1 class="logo-main">Lesson Reservation Site</h1>
+    </div>
+
+    <main class="main-container">
+      <section class="glass-panel">
+        <div class="panel-header">
+           <div class="month-nav">
+            <button id="btn-prev" class="nav-arrow">‹</button>
+            <span id="month-label" class="month-text">--</span>
+            <button id="btn-next" class="nav-arrow">›</button>
+          </div>
+        </div>
+        <div class="calendar-wrapper">
+          <div class="weekdays-row">
+            <span class="wd sun">SUN</span><span class="wd">MON</span><span class="wd">TUE</span>
+            <span class="wd">WED</span><span class="wd">THU</span><span class="wd">FRI</span><span class="wd sat">SAT</span>
+          </div>
+          <div id="cal-grid" class="cal-grid"></div>
+        </div>
+      </section>
+
+      <div class="footer-actions">
+        <button id="btn-open-about" class="btn-text-link">
+          <span style="font-family: var(--font-en); font-size:16px;">About Studio</span><br>
+          <span style="font-size:11px; opacity:0.8;">スタジオ・アクセス情報</span>
+        </button>
+        
+        <div style="height:16px;"></div>
+
+        <button id="btn-open-cancel" class="btn-text-link link-subtle">
+          予約のキャンセルはこちら
+        </button>
+      </div>
+
+      <div id="detail-drawer" class="drawer">
+        <div class="drawer-handle"></div>
+        <div class="drawer-content">
+          <div class="drawer-header">
+            <h2 id="selected-date-display" class="drawer-date">Date</h2>
+            <button id="close-drawer" class="btn-icon">×</button>
+          </div>
+          <div id="detail-list" class="lesson-list"></div>
+        </div>
+      </div>
+    </main>
+
+    <div id="modal-overlay" class="modal-overlay">
+      <div class="modal-card" id="modal-card">
+        <div id="view-detail" class="modal-step">
+          <h3 class="modal-title" id="detail-title"></h3>
+          <div class="modal-scroll-area">
+            <div class="detail-meta">
+              <span id="detail-date-time"></span>
+              <span id="detail-price" class="price-tag"></span>
+            </div>
+            <div class="detail-desc">
+              <p id="detail-desc-text"></p>
+            </div>
+          </div>
+          <div class="modal-actions">
+            <button class="btn-simple" id="btn-close-detail">閉じる</button>
+            <button class="btn-gold" id="btn-to-form">予約を進める</button>
+          </div>
+        </div>
+
+        <div id="view-form" class="modal-step hidden">
+          <h3 class="modal-title">Guest Info</h3>
+          <form id="booking-form" onsubmit="return false;">
+            <div class="field">
+              <label>お名前 <span style="color:red">*</span></label>
+              <input type="text" id="inp-name" placeholder="山田 花子">
+            </div>
+            <div class="field">
+              <label>電話番号 <span style="color:red">*</span></label>
+              <input type="tel" id="inp-phone" placeholder="090-0000-0000">
+            </div>
+            <div class="field">
+              <label>メールアドレス <span style="color:red">*</span></label>
+              <input type="email" id="inp-email" placeholder="example@gmail.com">
+            </div>
+          </form>
+          <div class="modal-actions">
+            <button class="btn-simple" id="btn-back-detail">戻る</button>
+            <button class="btn-gold" id="btn-to-confirm">確認へ進む</button>
+          </div>
+        </div>
+
+        <div id="view-confirm" class="modal-step hidden">
+          <h3 class="modal-title">Confirmation</h3>
+          <div class="confirm-info">
+           <p style="font-size:13px; color:#666; margin-bottom:10px;">以下の内容で予約します。</p>
+            <ul id="confirm-list" class="confirm-list-style"></ul>
+          </div>
+          
+          <div class="final-check-area" id="final-check-area" style="margin-top: 24px;">
+            <label class="checkbox-label">
+              <input type="checkbox" id="chk-agree">
+               <span>上記の内容に間違え無いことを確認しました</span>
+            </label>
+          </div>
+          <div class="modal-actions">
+            <button class="btn-simple" id="btn-back-form">修正する</button>
+            <button class="btn-gold" id="btn-finalize" disabled>予約を確定する</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="cancel-modal" class="modal-overlay">
+      <div class="modal-card center-align">
+        <h3 class="modal-title">Cancel Reservation</h3>
+        <p class="modal-desc">予約完了メールに記載されている
+予約IDを入力してください。</p>
+        <div class="field">
+          <input type="text" id="inp-cancel-id" placeholder="2025xxxx-xxx" style="text-align:center; letter-spacing:1px; font-size:18px;">
+        </div>
+        <div class="modal-actions">
+          <button class="btn-simple" id="btn-close-cancel">閉じる</button>
+          <button class="btn-gold" id="btn-exec-cancel">キャンセル実行</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="msg-modal" class="modal-overlay">
+      <div class="modal-card center-align">
+        <h3 class="modal-title" id="msg-title">Message</h3>
+        <p class="modal-desc" id="msg-body"></p>
+        <div class="modal-actions">
+          <button class="btn-gold" id="btn-msg-ok">OK</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="aboutModal" class="modal" role="dialog" aria-modal="true">
+      <div class="modal-card modal-card--lg about-card">
+        <button id="btn-close-about-x" class="btn-close-abs" type="button" aria-label="閉じる">×</button>
+        <div class="modal-hd">
+          <strong class="help-title">Studio Info</strong>
+        </div>
+        <div class="modal-bd about-content">
+          <div class="about-hero">
+            <img src="https://studio-torajirou.github.io/asako_gemin-9.png" alt="スタジオ内観">
+            <div class="about-hero-text">
+              <h2>心と体を整える<br>静寂の空間</h2>
+            </div>
+          </div>
+          <section class="about-section">
+            <h3>Concept</h3>
+            <p id="disp-concept" style="white-space: pre-wrap;">（読み込み中...）</p>
+          </section>
+          <hr class="help-divider">
+          <section class="about-section">
+            <h3>Information</h3>
+            <table class="info-table">
+              <tr><th>スタジオ名</th><td id="disp-studio-name">-</td></tr>
+              <tr><th>住所</th><td id="disp-address">-</td></tr>
+              <tr>
+                <th>お問い合わせ</th>
+                <td>
+                  <button id="btn-open-contact-form" class="btn-simple" style="border:1px solid var(--col-accent); padding:4px 12px; border-radius:4px; color:var(--col-accent-dark);">
+                    お問い合わせフォーム
+                  </button>
+                  <span id="disp-contact-email" style="display:none;">-</span>
+                </td>
+              </tr>
+              <tr><th>設備</th><td id="disp-facilities">-</td></tr>
+            </table>
+          </section>
+          <section class="about-section">
+            <h3>Access</h3>
+            <div class="map-container">
+              <iframe id="disp-map-frame" src="" width="100%" height="250" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
+            </div>
+            <p class="access-note">※ 地図は住所から自動生成されます</p>
+          </section>
+        </div>
+        <div class="modal-ft">
+          <button id="btn-close-about-ft" class="btn-simple" type="button">閉じる</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="contactModal" class="modal" role="dialog" aria-modal="true">
+      <div class="modal-card">
+        <div class="modal-hd"><strong class="modal-title">お問い合わせ</strong></div>
+        <div class="modal-bd">
+          <p style="font-size:13px; color:#666; margin-bottom:16px;">
+            ご質問やご要望がございましたら、お気軽にお問い合わせください。<br>
+            ※ご返信には数日いただく場合がございます。
+          </p>
+          <form id="contact-form" onsubmit="return false;">
+            <div class="field">
+              <label>お名前 <span style="color:red">*</span></label>
+              <input type="text" id="contact-name" placeholder="山田 花子">
+            </div>
+            <div class="field">
+              <label>電話番号 (任意)</label>
+              <input type="tel" id="contact-phone" placeholder="090-0000-0000">
+            </div>
+            <div class="field">
+              <label>返信用メールアドレス <span style="color:red">*</span></label>
+              <input type="email" id="contact-email" placeholder="example@gmail.com">
+            </div>
+            <div class="field">
+              <label>ご用件 <span style="color:red">*</span></label>
+              <div style="position:relative;">
+                <select id="contact-subject" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:6px; font-size:16px; background:#fafafa; appearance:none;">
+                  <option value="" disabled selected>選択してください</option>
+                  <option value="予約について">予約について</option>
+                  <option value="キャンセルについて">キャンセルについて</option>
+                  <option value="体験レッスンについて">体験レッスンについて</option>
+                  <option value="料金について">料金について</option>
+                  <option value="その他">その他</option>
+                </select>
+                <div style="position:absolute; right:12px; top:50%; transform:translateY(-50%); pointer-events:none; color:#888;">▼</div>
+              </div>
+            </div>
+            <div class="field">
+              <label>お問い合わせ内容 <span style="color:red">*</span></label>
+              <textarea id="contact-body" rows="5" placeholder="こちらに内容を入力してください..." style="width:100%; padding:12px; border:1px solid #ddd; border-radius:6px; font-size:16px; background:#fafafa;"></textarea>
+            </div>
+          </form>
+        </div>
+        <div class="modal-ft" style="display:flex; justify-content:space-between; gap:10px;">
+          <button id="btn-close-contact" class="btn-simple" type="button">キャンセル</button>
+          <button id="btn-send-contact" class="btn-gold" type="button">送信する</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="contactSuccessModal" class="modal" role="dialog" aria-modal="true">
+      <div class="modal-card center-align" style="max-width: 400px;">
+        <div class="modal-hd">
+          <strong class="modal-title" style="color:var(--col-accent-dark);">送信完了</strong>
+        </div>
+        <div class="modal-bd">
+          <div style="text-align: left; font-size: 15px; line-height: 1.8; color: #555; padding: 10px 0;">
+            <p style="margin-bottom: 15px;">お問い合わせを受け付けました。</p>
+            <p style="margin-bottom: 15px;">
+              確認のため内容を自動返信しましたが、<br>
+              もし返信メールが届かない場合は<br>
+              メールアドレスをご確認の上、<br>
+              再度お問い合わせいただくようにお願いします。
+            </p>
+          </div>
+        </div>
+        <div class="modal-ft">
+          <button id="btn-close-contact-success" class="btn-gold" type="button" style="min-width: 120px;">OK</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="api.js"></script>
+    <script src="script.js"></script>
+  </body>
 </html>
