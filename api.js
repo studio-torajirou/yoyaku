@@ -1,5 +1,5 @@
 // GASのウェブアプリURL
-const API_URL = "https://script.google.com/macros/s/AKfycbyGvbEEBepD9gEZ6em0iYs9TrnauctUo67OjohW7BmVNR7ByaxdXaLvg1p6CilwXbo/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbwzn7oJAsoc20JyOw77EjbYwWCHHj1DBkIqrCreacNu-KX5l5k8Gx3JEZTlow7P9I3K6g/exec";
 
 /**
  * google.script.run の代わりになる通信関数
