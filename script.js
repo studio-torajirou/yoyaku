@@ -16,12 +16,10 @@ window.onerror = function(msg, url, line) {
     currMonth: new Date().getMonth(),
     selectedLesson: null, 
     bookingData: {},
-    // ★追加: キャンセル待ちモードかどうかを管理
     isWaitlistMode: false 
   };
 
   document.addEventListener("DOMContentLoaded", () => {
-    // URLパラメータからキャンセルIDを取得 (メールリンクからの遷移用)
     const params = new URLSearchParams(window.location.search);
     const cancelId = params.get('cancel_id');
     if(cancelId) {
@@ -31,7 +29,6 @@ window.onerror = function(msg, url, line) {
 
     renderCalendar();
 
-    // 初期データ取得
     gas("apiGetInit").then(jsonStr => {
       const data = JSON.parse(jsonStr);
       state.lessons = data.lessons || [];
@@ -47,7 +44,6 @@ window.onerror = function(msg, url, line) {
 
       renderCalendar();
       
-      // Studio Infoの遅延ロード用データ処理
       if(data.success && data.settings){
           window.torajiroSettings = data.settings;
           updateAboutInfo(data.settings);
@@ -58,7 +54,6 @@ window.onerror = function(msg, url, line) {
       if(dbg) dbg.textContent = "Net Err: " + e;
     });
 
-    // キャンセルモーダル初期表示（URLパラメータがある場合）
     const cidVal = document.getElementById("url-cancel-id") ? document.getElementById("url-cancel-id").value : "";
     if (cidVal) {
       const inp = document.getElementById("inp-cancel-id");
@@ -66,24 +61,17 @@ window.onerror = function(msg, url, line) {
       document.getElementById("cancel-modal").classList.add("open");
     }
 
-    // --- イベントリスナー設定 ---
-
-    // カレンダー操作
+    // イベントリスナー設定
     document.getElementById("btn-prev").addEventListener("click", () => moveMonth(-1));
     document.getElementById("btn-next").addEventListener("click", () => moveMonth(1));
-    
-    // ドロワー・モーダル閉じる系
     document.getElementById("close-drawer").addEventListener("click", () => document.getElementById("detail-drawer").classList.remove("open"));
     
     const closeModalFunc = () => document.getElementById("modal-overlay").classList.remove("open");
     document.getElementById("btn-close-detail").addEventListener("click", closeModalFunc);
     
-    // ステップ遷移
     document.getElementById("btn-to-form").addEventListener("click", () => switchStep("view-form"));
     document.getElementById("btn-back-detail").addEventListener("click", () => switchStep("view-detail"));
-    
     document.getElementById("btn-to-confirm").addEventListener("click", validateAndToConfirm);
-    
     document.getElementById("btn-back-form").addEventListener("click", () => switchStep("view-form"));
     
     const chkAgree = document.getElementById("chk-agree");
@@ -94,15 +82,11 @@ window.onerror = function(msg, url, line) {
       });
     }
 
-    // 予約確定実行
     document.getElementById("btn-finalize").addEventListener("click", finalizeBooking);
-
-    // キャンセル機能
     document.getElementById("btn-open-cancel").addEventListener("click", () => document.getElementById("cancel-modal").classList.add("open"));
     document.getElementById("btn-close-cancel").addEventListener("click", () => document.getElementById("cancel-modal").classList.remove("open"));
     document.getElementById("btn-exec-cancel").addEventListener("click", execCancel);
 
-    // メッセージモーダル
     document.getElementById("btn-msg-ok").addEventListener("click", () => {
       const modal = document.getElementById("msg-modal");
       modal.classList.remove("open");
@@ -115,7 +99,6 @@ window.onerror = function(msg, url, line) {
       }
     });
 
-    // Aboutモーダル制御
     const btnAbout = document.getElementById("btn-open-about");
     if(btnAbout) {
       btnAbout.addEventListener("click", () => {
@@ -137,8 +120,6 @@ window.onerror = function(msg, url, line) {
     
     setupExtensions();
   });
-
-  // --- ヘルパー関数群 ---
 
   function isLightColor(hex) {
     if (!hex) return false;
@@ -199,20 +180,19 @@ window.onerror = function(msg, url, line) {
             evt.style.color = '#fff';
           }
 
-          // 満席表示ロジック
           const isFull = (l.capacity > 0 && l.reserved >= l.capacity);
           
           if(isFull) {
             evt.classList.add('full');
           }
 
-          // ★修正箇所: divタグで構造化し、inline styleで文字サイズを小さく調整
+          // ★重要: CSSで各要素を個別に小さく制御できるようにdivで構造化
           const timeDisplay = isFull ? `(満)${l.startTime}` : l.startTime;
           
           evt.innerHTML = `
-            <div style="font-size:11px; line-height:1.2;">${timeDisplay}</div>
-            <div style="font-size:12px; font-weight:bold; line-height:1.2; margin:1px 0;">${l.className}</div>
-            <div style="font-size:11px; line-height:1.2;">${l.teacherName}</div>
+            <div class="ce-time">${timeDisplay}</div>
+            <div class="ce-title" style="font-weight:bold;">${l.className}</div>
+            <div class="ce-teacher">${l.teacherName}</div>
           `;
 
           cell.appendChild(evt);
@@ -223,7 +203,6 @@ window.onerror = function(msg, url, line) {
     }
   }
 
-  // ★重要: ドロワーでのボタン出し分け（予約/キャンセル待ち/満席）
   function openDrawer(dateStr) {
     const drawer = document.getElementById("detail-drawer");
     const list = document.getElementById("detail-list");
@@ -240,14 +219,10 @@ window.onerror = function(msg, url, line) {
         item.className = "lesson-item";
         const barColor = (l.color && l.color !== '') ? l.color : '#ddd';
         
-        // --- 判定ロジック ---
         const waitCount = l.waitlist || 0;
-        // 定員と予約数を数値化して比較
         const cap = Number(l.capacity);
         const res = Number(l.reserved);
         const isFull = (cap > 0 && res >= cap);
-        
-        // 満席だが、キャンセル待ち枠(5名)に空きがあるか判定
         const isWaitlistAvail = isFull && (waitCount < 5);
 
         let btnText = '予約';
@@ -257,14 +232,12 @@ window.onerror = function(msg, url, line) {
         if(isFull) {
           if(isWaitlistAvail) {
              btnText = 'キャンセル待ち';
-             // オレンジ系の色で注意を促す (インラインスタイルで既存デザインを上書き)
              btnStyle = 'border-color:#fbc02d; color:#f57f17; background:#fff;';
           } else {
              btnText = '満席';
              btnDisabled = 'disabled';
           }
         }
-        // --- 判定ロジック終了 ---
 
         item.innerHTML = `
           <div class="li-time"><div>${l.startTime}</div><div style="font-size:11px;opacity:0.6;">${l.endTime}</div></div>
@@ -273,9 +246,7 @@ window.onerror = function(msg, url, line) {
           <button class="li-btn" style="${btnStyle}" ${btnDisabled}>${btnText}</button>
         `;
         
-        // 満席でない、またはキャンセル待ち可能な場合のみクリックイベントを設定
         if(!isFull || isWaitlistAvail) {
-          // 第二引数でキャンセル待ちモードかどうかを渡す
           item.querySelector("button").onclick = () => openDetailModal(l, isWaitlistAvail);
         }
         list.appendChild(item);
@@ -284,12 +255,10 @@ window.onerror = function(msg, url, line) {
     drawer.classList.add("open");
   }
 
-  // ★重要: キャンセル待ちモードを受け取る
   function openDetailModal(lesson, isWaitlist = false) {
     state.selectedLesson = lesson;
-    state.isWaitlistMode = isWaitlist; // 状態を保存
+    state.isWaitlistMode = isWaitlist;
 
-    // タイトルやボタンの文言切り替え
     const titlePrefix = isWaitlist ? "【キャンセル待ち】" : "";
     document.getElementById("detail-title").textContent = titlePrefix + lesson.className;
     
@@ -297,7 +266,6 @@ window.onerror = function(msg, url, line) {
     document.getElementById("detail-price").textContent = lesson.price || '';
     document.getElementById("detail-desc-text").textContent = lesson.description || '詳細情報はありません。';
     
-    // 詳細画面のボタン文言変更
     const btnNext = document.getElementById("btn-to-form");
     if(btnNext) {
        btnNext.textContent = isWaitlist ? "キャンセル待ちへ進む" : "予約を進める";
@@ -337,7 +305,6 @@ window.onerror = function(msg, url, line) {
 
     state.bookingData = { name: name.value, phone: phone.value, email: email.value };
     
-    // ★重要: 確認リストに申込タイプ（通常/キャンセル待ち）を表示
     const list = document.getElementById("confirm-list");
     const typeLabel = state.isWaitlistMode ? 
       '<span style="color:#f57f17; font-weight:bold;">キャンセル待ち</span>' : '通常予約';
@@ -364,7 +331,6 @@ window.onerror = function(msg, url, line) {
     
     const btnFinal = document.getElementById("btn-finalize");
     if(btnFinal) {
-      // ボタン文言も変更
       btnFinal.textContent = state.isWaitlistMode ? "キャンセル待ちを確定" : "予約を確定する";
       btnFinal.disabled = true;
     }
@@ -372,7 +338,6 @@ window.onerror = function(msg, url, line) {
     switchStep("view-confirm");
   }
 
-  // ★重要: 完了メッセージの分岐処理
   function finalizeBooking() {
     const btn = document.getElementById("btn-finalize");
     btn.textContent = "処理中...";
@@ -390,7 +355,6 @@ window.onerror = function(msg, url, line) {
       if(res.success) {
         document.getElementById("modal-overlay").classList.remove("open");
         
-        // レスポンスの isWaitlist フラグを見てメッセージを切り替え
         if(res.isWaitlist) {
             showMsg("受付完了", `キャンセル待ちを受け付けました。\n\n空きが出次第、自動で予約が確定しメールでお知らせします。\n(レッスン開始24時間前まで有効)`, true);
         } else {
@@ -399,7 +363,6 @@ window.onerror = function(msg, url, line) {
 
       } else {
         showMsg("予約エラー", res.error);
-        // エラー時はボタンを元の状態に戻す
         btn.textContent = state.isWaitlistMode ? "キャンセル待ちを確定" : "予約を確定する";
         btn.disabled = false;
       }
@@ -472,7 +435,6 @@ window.onerror = function(msg, url, line) {
   }
 
   function setupExtensions() {
-    // Contact Form
     document.addEventListener('click', function(e){
       if(e.target && e.target.id === 'btn-open-contact-form'){
         try {
@@ -675,5 +637,5 @@ window.onerror = function(msg, url, line) {
         }
       });
     }
-  } // setupExtensions
+  } 
 })();
