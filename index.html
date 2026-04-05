@@ -107,22 +107,24 @@
           </div>
         </div>
 
-        <div id="view-confirm" class="modal-step hidden">
+        <div id="view-confirm" class="modal-step hidden" style="display: flex; flex-direction: column; height: 100%;">
           <h3 class="modal-title">Confirmation</h3>
-          <div class="confirm-info">
-           <p style="font-size:13px; color:#666; margin-bottom:10px;">以下の内容で予約します。</p>
-            <ul id="confirm-list" class="confirm-list-style"></ul>
-          </div>
           
-          <div class="final-check-area" id="final-check-area" style="margin-top: 24px;">
-            <label class="checkbox-label">
-              <input type="checkbox" id="chk-agree">
-               <span>上記の内容に間違え無いことを確認しました</span>
+          <div class="final-check-area" id="final-check-area" style="margin-bottom: 16px;">
+            <label class="checkbox-label" style="font-size: 15px; font-weight: bold; color: var(--col-accent-dark);">
+              <input type="checkbox" id="chk-agree" class="large-checkbox">
+               <span>下記の内容に間違え無いことを確認しました</span>
             </label>
           </div>
-          <div class="modal-actions">
+
+          <div class="modal-actions" style="margin-top: 0; margin-bottom: 20px;">
             <button class="btn-simple" id="btn-back-form">修正する</button>
             <button class="btn-gold" id="btn-finalize" disabled>予約を確定する</button>
+          </div>
+
+          <div class="confirm-info confirm-scroll-area">
+           <p style="font-size:13px; color:#666; margin-bottom:10px;">以下の内容で予約します。</p>
+            <ul id="confirm-list" class="confirm-list-style"></ul>
           </div>
         </div>
       </div>
