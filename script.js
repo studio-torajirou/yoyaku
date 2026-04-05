@@ -76,10 +76,37 @@ window.onerror = function(msg, url, line) {
     
     const chkAgree = document.getElementById("chk-agree");
     if(chkAgree) {
-      chkAgree.addEventListener("change", (e) => {
-        const btn = document.getElementById("btn-finalize");
-        if(btn) btn.disabled = !e.target.checked;
+      // --- IAB（アプリ内ブラウザ）対策: イベントの冗長化と非同期評価 ---
+      ['change', 'input', 'click', 'touchend'].forEach(eventType => {
+        chkAgree.addEventListener(eventType, () => {
+          setTimeout(() => {
+            const btn = document.getElementById("btn-finalize");
+            if(btn) btn.disabled = !chkAgree.checked;
+          }, 100);
+        });
       });
+
+      // --- IAB（アプリ内ブラウザ）対策: ラベルタップ時の強制イベント発火 ---
+      const chkLabel = chkAgree.closest('label');
+      if(chkLabel) {
+        chkLabel.addEventListener('click', (e) => {
+          // input自身をクリックした場合はブラウザの標準挙動に任せる
+          if(e.target.tagName.toLowerCase() === 'input') return;
+          
+          e.preventDefault(); // デフォルトの挙動をブロック
+          chkAgree.checked = !chkAgree.checked; // 状態を強制反転
+          
+          // 強制的にchangeイベントを生成して発火させる
+          let syntheticEvent;
+          if(typeof Event === 'function') {
+            syntheticEvent = new Event('change', { bubbles: true });
+          } else {
+            syntheticEvent = document.createEvent('Event');
+            syntheticEvent.initEvent('change', true, true);
+          }
+          chkAgree.dispatchEvent(syntheticEvent);
+        });
+      }
     }
 
     document.getElementById("btn-finalize").addEventListener("click", finalizeBooking);
